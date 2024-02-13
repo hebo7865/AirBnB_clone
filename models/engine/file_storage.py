@@ -2,7 +2,13 @@
 """My Class."""
 
 import json
-from datetime import datetime
+from ..base_model import BaseModel
+from ..user import User
+from ..amenity import Amenity
+from ..city import City
+from ..place import Place
+from ..state import State
+from ..review import Review
 
 
 class FileStorage:
@@ -18,25 +24,25 @@ class FileStorage:
     def new(self, obj):
         """To add new object to dictionary."""
         key = f"{obj.__class__.__name__}.{obj.id}"
-        self.__objects[key] = obj.__dict__
+        self.__objects[key] = obj
 
     def save(self):
         """To save object into file.json."""
+        objs = {}
         for key, value in FileStorage.__objects.items():
-            for i, j in value.items():
-                if i in ["created_at", "updated_at"]:
-                    value[i] = value[i].isoformat()
+            objs[key] = value.to_dict()
         with open(self.__file_path, "w") as file:
-            json.dump(FileStorage.__objects, file)
+            json.dump(objs, file, indent=4)
 
     def reload(self):
         """To get objects from file.json."""
         try:
             with open(self.__file_path, "r") as file:
                 data = json.load(file)
-                for i in data.values():
-                    i["created_at"] = datetime.fromisoformat(i["created_at"])
-                    i["updated_at"] = datetime.fromisoformat(i["updated_at"])
-            FileStorage.__objects = data
+                for key, value in data.items():
+                    class_name = value["__class__"]
+                    del value["__class__"]
+                    class_obj = eval(class_name)
+                    self.new(class_obj(**value))
         except Exception:
             pass

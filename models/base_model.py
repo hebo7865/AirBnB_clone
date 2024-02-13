@@ -13,9 +13,12 @@ class BaseModel:
     def __init__(self, *args, **kwargs):
         """Class Constructor."""
         if kwargs:
-            self.id = kwargs["id"]
-            self.created_at = kwargs["created_at"]
-            self.updated_at = kwargs["updated_at"]
+            for key, value in kwargs.items():
+                if key in ["created_at", "updated_at"]:
+                    form = "%Y-%m-%dT%H:%M:%S.%f"
+                    self.__dict__[key] = datetime.strptime(value, form)
+                    continue
+                self.__dict__[key] = value
         else:
             time = datetime.now()
             self.id = str(uuid4())
@@ -26,14 +29,13 @@ class BaseModel:
     def save(self):
         """To save object into file.json."""
         self.updated_at = datetime.now()
-        created, updated = self.created_at, self.updated_at
         models.storage.save()
-        self.created_at = created
-        self.updated_at = updated
 
     def to_dict(self):
         """To convert object into dictionary."""
         my_dict = self.__dict__.copy()
+        my_dict["created_at"] = self.created_at.isoformat()
+        my_dict["updated_at"] = self.updated_at.isoformat()
         my_dict["__class__"] = self.__class__.__name__
         return my_dict
 
